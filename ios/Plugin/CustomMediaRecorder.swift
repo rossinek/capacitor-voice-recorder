@@ -21,11 +21,12 @@ class CustomMediaRecorder {
     }
 
     private var onSilenceCallback: (() -> Void)?
-    private var silenceThreshold: Float = 2.0
+    private var silenceThreshold: Float = 0.01
 
-    private var audioEngine: AVAudioEngine?
+    private var audioEngine: AVAudioEngine!
     private var silenceTimer: Timer?
-    private var lastNonSilentTime: Date?
+    private var lastNonSilenceTime: TimeInterval = 0
+    private var audioDetected = false
 
     public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThreshold: Float) -> Bool {
         self.onSilenceCallback = onSilenceCallback
@@ -40,7 +41,7 @@ class CustomMediaRecorder {
             audioRecorder = try AVAudioRecorder(url: audioFilePath, settings: settings)
             audioRecorder.record()
 
-            setupSilenceDetector()
+            setupSilenceDetection()
 
             status = CurrentRecordingStatus.RECORDING
             return true
@@ -49,27 +50,43 @@ class CustomMediaRecorder {
         }
     }
 
-    private func setupSilenceDetector() {
+    private func setupSilenceDetection() {
         audioEngine = AVAudioEngine()
-        guard let audioEngine = audioEngine else { return }
-
         let inputNode = audioEngine.inputNode
         let bus = 0
-        let inputFormat = inputNode.inputFormat(forBus: bus)
 
-        inputNode.installTap(onBus: bus, bufferSize: 1024, format: inputFormat) { [weak self] (buffer, time) in
+        inputNode.installTap(onBus: bus, bufferSize: 1024, format: inputNode.outputFormat(forBus: bus)) { [weak self] (buffer, time) in
             guard let self = self else { return }
-            let level = self.calculateDecibels(buffer: buffer)
-            print(">>>>>>>>> level: \(level)")
-            if level > self.silenceThreshold {
-                self.lastNonSilentTime = Date()
-            } else if let lastNonSilentTime = self.lastNonSilentTime,
-                      Date().timeIntervalSince(lastNonSilentTime) >= TimeInterval(self.silenceThreshold) {
-                DispatchQueue.main.async {
-                    print(">>>>>>>>> Silence detected")
-                    self.onSilenceCallback?()
+
+            let channelData = buffer.floatChannelData?[0]
+            let frameCount = buffer.frameLength
+
+            var sum: Float = 0
+            for i in 0..<Int(frameCount) {
+                sum += abs(channelData![i])
+            }
+
+            let average = sum / Float(frameCount)
+
+            print("Average: \(average)")
+            print("Silence threshold: \(self.silenceThreshold)")
+
+            if average >= self.silenceThreshold {
+                self.audioDetected = true
+                self.lastNonSilenceTime = CACurrentMediaTime()
+                self.silenceTimer?.invalidate()
+            } else if self.audioDetected {
+                print(">>>>>>>> Silence detected")
+                let currentTime = CACurrentMediaTime()
+                if currentTime - self.lastNonSilenceTime > 2.0 { // 2 seconds of silence
+                    print(">>>>>>>> Silence detected 2")
+                    self.silenceTimer?.invalidate()
+                    self.silenceTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { _ in
+                        print(">>>>>>>> Silence detected 3")
+                        self.onSilenceCallback?()
+                        self.audioDetected = false
+                    }
                 }
-                self.lastNonSilentTime = nil
             }
         }
 
@@ -80,21 +97,10 @@ class CustomMediaRecorder {
         }
     }
 
-    private func calculateDecibels(buffer: AVAudioPCMBuffer) -> Float {
-        guard let channelData = buffer.floatChannelData else { return 0 }
-        let channelDataValue = channelData.pointee
-        let channelDataValueArray = stride(from: 0,
-                                           to: Int(buffer.frameLength),
-                                           by: buffer.stride).map{ channelDataValue[$0] }
-        let rms = sqrt(channelDataValueArray.map{ $0 * $0 }.reduce(0, +) / Float(buffer.frameLength))
-        let avgPower = 20 * log10(rms)
-        return avgPower
-    }
-
     public func stopRecording() {
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine = nil
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        silenceTimer?.invalidate()
 
         do {
             audioRecorder.stop()
