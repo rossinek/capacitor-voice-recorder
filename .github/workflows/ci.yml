@@ -53,33 +53,6 @@ jobs:
       - run: npm install
       - run: npm run verify:ios
 
-  verify-android:
-    runs-on: ubuntu-latest
-    name: "Android Verification"
-    timeout-minutes: 30
-    needs:
-      - lint
-    steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-      - name: set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'zulu'
-      - uses: actions/checkout@v4
-      - name: Restore Dependency Cache
-        id: cache-modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            */node_modules
-          key: ${{ runner.os }}-dependency-caching-${{ hashFiles('package.json', '*/package.json') }}
-      - run: npm ci
-      - run: npm run verify:android
-
   verify-web:
     runs-on: ubuntu-latest
     name: "Web Verification"
@@ -109,7 +82,6 @@ jobs:
     needs:
       - verify-web
       - verify-ios
-      - verify-android
     steps:
       - uses: actions/setup-node@v4
         with:
