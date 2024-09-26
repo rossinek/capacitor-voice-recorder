@@ -30,7 +30,7 @@ export interface VoiceRecorderPlugin {
   hasAudioRecordingPermission(): Promise<GenericResponse>;
 
   startRecording(options: {
-    onSilenceCallback: () => void;
+    onSilenceCallback?: () => void;
     silenceThreshold?: number;
   }): Promise<GenericResponse>;
 

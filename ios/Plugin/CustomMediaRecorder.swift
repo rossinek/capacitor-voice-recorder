@@ -23,6 +23,10 @@ class CustomMediaRecorder {
     private var onSilenceCallback: (() -> Void)?
     private var silenceThreshold: Float = 2.0
 
+    private var audioEngine: AVAudioEngine?
+    private var silenceTimer: Timer?
+    private var lastNonSilentTime: Date?
+
     public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThreshold: Float) -> Bool {
         self.onSilenceCallback = onSilenceCallback
         self.silenceThreshold = silenceThreshold
@@ -36,9 +40,7 @@ class CustomMediaRecorder {
             audioRecorder = try AVAudioRecorder(url: audioFilePath, settings: settings)
             audioRecorder.record()
 
-            // Add silence detection logic here
-            // You may need to use AVAudioEngine and AVAudioNodeTapBlock to detect silence
-            // Call self.onSilenceCallback?() when silence is detected
+            setupSilenceDetector()
 
             status = CurrentRecordingStatus.RECORDING
             return true
@@ -47,7 +49,52 @@ class CustomMediaRecorder {
         }
     }
 
+    private func setupSilenceDetector() {
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else { return }
+
+        let inputNode = audioEngine.inputNode
+        let bus = 0
+        let inputFormat = inputNode.inputFormat(forBus: bus)
+
+        inputNode.installTap(onBus: bus, bufferSize: 1024, format: inputFormat) { [weak self] (buffer, time) in
+            guard let self = self else { return }
+            let level = self.calculateDecibels(buffer: buffer)
+
+            if level > self.silenceThreshold {
+                self.lastNonSilentTime = Date()
+            } else if let lastNonSilentTime = self.lastNonSilentTime,
+                      Date().timeIntervalSince(lastNonSilentTime) >= TimeInterval(self.silenceThreshold) {
+                DispatchQueue.main.async {
+                    self.onSilenceCallback?()
+                }
+                self.lastNonSilentTime = nil
+            }
+        }
+
+        do {
+            try audioEngine.start()
+        } catch {
+            print("Error starting audio engine: \(error)")
+        }
+    }
+
+    private func calculateDecibels(buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+        let channelDataValue = channelData.pointee
+        let channelDataValueArray = stride(from: 0,
+                                           to: Int(buffer.frameLength),
+                                           by: buffer.stride).map{ channelDataValue[$0] }
+        let rms = sqrt(channelDataValueArray.map{ $0 * $0 }.reduce(0, +) / Float(buffer.frameLength))
+        let avgPower = 20 * log10(rms)
+        return avgPower
+    }
+
     public func stopRecording() {
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine = nil
+
         do {
             audioRecorder.stop()
             try recordingSession.setActive(false)
