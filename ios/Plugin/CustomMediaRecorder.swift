@@ -22,15 +22,15 @@ class CustomMediaRecorder {
 
     private var onSilenceCallback: (() -> Void)?
     private var silenceThreshold: Float = 0.01
+    private var silenceThresholdSeconds: Float = 2.0
 
     private var audioEngine: AVAudioEngine!
-    private var silenceTimer: Timer?
     private var lastNonSilenceTime: TimeInterval = 0
     private var audioDetected = false
 
-    public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThreshold: Float) -> Bool {
+    public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThresholdSeconds: Float) -> Bool {
         self.onSilenceCallback = onSilenceCallback
-        self.silenceThreshold = silenceThreshold
+        self.silenceThresholdSeconds = silenceThresholdSeconds
 
         do {
             recordingSession = AVAudioSession.sharedInstance()
@@ -74,18 +74,13 @@ class CustomMediaRecorder {
             if average >= self.silenceThreshold {
                 self.audioDetected = true
                 self.lastNonSilenceTime = CACurrentMediaTime()
-                self.silenceTimer?.invalidate()
             } else if self.audioDetected {
                 print(">>>>>>>> Silence detected")
                 let currentTime = CACurrentMediaTime()
-                if currentTime - self.lastNonSilenceTime > 2.0 { // 2 seconds of silence
+                if currentTime - self.lastNonSilenceTime > Double(self.silenceThresholdSeconds) {
                     print(">>>>>>>> Silence detected 2")
-                    self.silenceTimer?.invalidate()
-                    self.silenceTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { _ in
-                        print(">>>>>>>> Silence detected 3")
-                        self.onSilenceCallback?()
-                        self.audioDetected = false
-                    }
+                    self.onSilenceCallback?()
+                    self.audioDetected = false
                 }
             }
         }
@@ -100,7 +95,6 @@ class CustomMediaRecorder {
     public func stopRecording() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-        silenceTimer?.invalidate()
 
         do {
             audioRecorder.stop()
