@@ -1,3 +1,5 @@
+import copy from 'rollup-plugin-copy'
+
 export default {
   input: 'dist/esm/index.js',
   output: [
@@ -19,4 +21,11 @@ export default {
     },
   ],
   external: ['@capacitor/core'],
+  plugins: [
+    copy({
+      targets: [
+        { src: 'audio-worklets/**/*', dest: 'dist/audio-worklets' }
+      ]
+    })
+  ]
 };
