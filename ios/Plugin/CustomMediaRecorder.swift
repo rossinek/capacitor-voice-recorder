@@ -60,12 +60,13 @@ class CustomMediaRecorder {
         inputNode.installTap(onBus: bus, bufferSize: 1024, format: inputFormat) { [weak self] (buffer, time) in
             guard let self = self else { return }
             let level = self.calculateDecibels(buffer: buffer)
-
+            print(">>>>>>>>> level: \(level)")
             if level > self.silenceThreshold {
                 self.lastNonSilentTime = Date()
             } else if let lastNonSilentTime = self.lastNonSilentTime,
                       Date().timeIntervalSince(lastNonSilentTime) >= TimeInterval(self.silenceThreshold) {
                 DispatchQueue.main.async {
+                    print(">>>>>>>>> Silence detected")
                     self.onSilenceCallback?()
                 }
                 self.lastNonSilentTime = nil
