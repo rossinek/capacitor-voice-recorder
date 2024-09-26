@@ -10,7 +10,7 @@ export class VoiceRecordingService {
   private audioContext: AudioContext | undefined;
 
   public async startRecording(options: {
-    onSilenceCallback: () => void;
+    onSilenceCallback?: () => void;
     silenceThreshold?: number;
   }): Promise<GenericResponse> {
     console.log('>>>>> startRecording shark');
@@ -22,7 +22,7 @@ export class VoiceRecordingService {
 
       this.mediaRecorder = new MediaRecorder(this.stream);
 
-      await this.setupSilenceDetector(options.onSilenceCallback, options.silenceThreshold ?? 2.0);
+      await this.setupSilenceDetector(options.onSilenceCallback ?? (() => console.log('onSilenceCallback not set')), options.silenceThreshold ?? 2.0);
 
       this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
         this.audioChunks.push(event.data);

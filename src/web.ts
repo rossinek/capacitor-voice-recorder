@@ -19,7 +19,7 @@ export class VoiceRecorderWeb extends WebPlugin implements VoiceRecorderPlugin {
   }
 
   public startRecording(options: {
-    onSilenceCallback: () => void;
+    onSilenceCallback?: () => void;
     silenceThreshold?: number;
   }): Promise<GenericResponse> {
     return this.voiceRecorderInstance.startRecording(options);

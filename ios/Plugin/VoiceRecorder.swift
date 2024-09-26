@@ -37,7 +37,7 @@ public class VoiceRecorder: CAPPlugin {
             return
         }
 
-        let onSilenceCallback = call.getString("onSilenceCallback") ?? ""
+        // let onSilenceCallback = call.getString("onSilenceCallback") ?? ""
         let silenceThreshold = call.getFloat("silenceThreshold") ?? 2.0
 
         customMediaRecorder = CustomMediaRecorder()
@@ -48,7 +48,7 @@ public class VoiceRecorder: CAPPlugin {
 
         let successfullyStartedRecording = customMediaRecorder!.startRecording(
             onSilenceCallback: { [weak self] in
-                self?.notifyListeners(onSilenceCallback, data: nil)
+                self?.notifyListeners("onSilenceCallback", data: nil)
             },
             silenceThreshold: silenceThreshold
         )
