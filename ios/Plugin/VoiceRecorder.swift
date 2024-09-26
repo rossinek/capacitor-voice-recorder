@@ -25,7 +25,6 @@ public class VoiceRecorder: CAPPlugin {
         call.resolve(ResponseGenerator.fromBoolean(doesUserGaveAudioRecordingPermission()))
     }
 
-
     @objc func startRecording(_ call: CAPPluginCall) {
         print(">>>>>>>>>>>> startRecording")
         if(!doesUserGaveAudioRecordingPermission()) {
@@ -38,13 +37,21 @@ public class VoiceRecorder: CAPPlugin {
             return
         }
 
+        let onSilenceCallback = call.getString("onSilenceCallback") ?? ""
+        let silenceThreshold = call.getFloat("silenceThreshold") ?? 2.0
+
         customMediaRecorder = CustomMediaRecorder()
         if(customMediaRecorder == nil) {
             call.reject(Messages.CANNOT_RECORD_ON_THIS_PHONE)
             return
         }
 
-        let successfullyStartedRecording = customMediaRecorder!.startRecording()
+        let successfullyStartedRecording = customMediaRecorder!.startRecording(
+            onSilenceCallback: { [weak self] in
+                self?.notifyListeners(onSilenceCallback, data: nil)
+            },
+            silenceThreshold: silenceThreshold
+        )
         if successfullyStartedRecording == false {
             customMediaRecorder = nil
             call.reject(Messages.CANNOT_RECORD_ON_THIS_PHONE)

@@ -2,25 +2,31 @@ import Foundation
 import AVFoundation
 
 class CustomMediaRecorder {
-    
+
     private var recordingSession: AVAudioSession!
     private var audioRecorder: AVAudioRecorder!
     private var audioFilePath: URL!
     private var originalRecordingSessionCategory: AVAudioSession.Category!
     private var status = CurrentRecordingStatus.NONE
-    
+
     private let settings = [
         AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
         AVSampleRateKey: 44100,
         AVNumberOfChannelsKey: 1,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
     ]
-    
+
     private func getDirectoryToSaveAudioFile() -> URL {
         return URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
     }
-    
-    public func startRecording() -> Bool {
+
+    private var onSilenceCallback: (() -> Void)?
+    private var silenceThreshold: Float = 2.0
+
+    public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThreshold: Float) -> Bool {
+        self.onSilenceCallback = onSilenceCallback
+        self.silenceThreshold = silenceThreshold
+
         do {
             recordingSession = AVAudioSession.sharedInstance()
             originalRecordingSessionCategory = recordingSession.category
@@ -29,13 +35,18 @@ class CustomMediaRecorder {
             audioFilePath = getDirectoryToSaveAudioFile().appendingPathComponent("\(UUID().uuidString).aac")
             audioRecorder = try AVAudioRecorder(url: audioFilePath, settings: settings)
             audioRecorder.record()
+
+            // Add silence detection logic here
+            // You may need to use AVAudioEngine and AVAudioNodeTapBlock to detect silence
+            // Call self.onSilenceCallback?() when silence is detected
+
             status = CurrentRecordingStatus.RECORDING
             return true
         } catch {
             return false
         }
     }
-    
+
     public func stopRecording() {
         do {
             audioRecorder.stop()
@@ -47,11 +58,11 @@ class CustomMediaRecorder {
             status = CurrentRecordingStatus.NONE
         } catch {}
     }
-    
+
     public func getOutputFile() -> URL {
         return audioFilePath
     }
-    
+
     public func pauseRecording() -> Bool {
         if(status == CurrentRecordingStatus.RECORDING) {
             audioRecorder.pause()
@@ -61,7 +72,7 @@ class CustomMediaRecorder {
             return false
         }
     }
-    
+
     public func resumeRecording() -> Bool {
         if(status == CurrentRecordingStatus.PAUSED) {
             audioRecorder.record()
@@ -71,9 +82,9 @@ class CustomMediaRecorder {
             return false
         }
     }
-    
+
     public func getCurrentStatus() -> CurrentRecordingStatus {
         return status
     }
-    
+
 }

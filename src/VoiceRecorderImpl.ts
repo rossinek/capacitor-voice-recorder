@@ -32,7 +32,11 @@ export class VoiceRecorderImpl {
     }
   }
 
-  public async startRecording(): Promise<GenericResponse> {
+  public async startRecording(options: {
+    onSilenceCallback: () => void;
+    silenceThreshold?: number;
+  }): Promise<GenericResponse> {
+    console.log('startRecording', options);
     if (this.mediaRecorder != null) {
       throw alreadyRecordingError();
     }

@@ -1,25 +1,28 @@
 import { WebPlugin } from '@capacitor/core';
 
-import { VoiceRecorderImpl } from './VoiceRecorderImpl';
+import { VoiceRecordingService } from './VoiceRecordingService';
 import type { CurrentRecordingStatus, GenericResponse, RecordingData, VoiceRecorderPlugin } from './definitions';
 
 export class VoiceRecorderWeb extends WebPlugin implements VoiceRecorderPlugin {
-  private voiceRecorderInstance = new VoiceRecorderImpl();
+  private voiceRecorderInstance = new VoiceRecordingService();
 
   public canDeviceVoiceRecord(): Promise<GenericResponse> {
-    return VoiceRecorderImpl.canDeviceVoiceRecord();
+    return Promise.resolve({ value: true });
   }
 
   public hasAudioRecordingPermission(): Promise<GenericResponse> {
-    return VoiceRecorderImpl.hasAudioRecordingPermission();
+    return Promise.resolve({ value: true });
   }
 
   public requestAudioRecordingPermission(): Promise<GenericResponse> {
-    return VoiceRecorderImpl.requestAudioRecordingPermission();
+    return Promise.resolve({ value: true });
   }
 
-  public startRecording(): Promise<GenericResponse> {
-    return this.voiceRecorderInstance.startRecording();
+  public startRecording(options: {
+    onSilenceCallback: () => void;
+    silenceThreshold?: number;
+  }): Promise<GenericResponse> {
+    return this.voiceRecorderInstance.startRecording(options);
   }
 
   public stopRecording(): Promise<RecordingData> {
