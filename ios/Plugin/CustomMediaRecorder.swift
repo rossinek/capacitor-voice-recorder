@@ -17,7 +17,7 @@ class CustomMediaRecorder {
         AVLinearPCMIsFloatKey: false,
         AVLinearPCMIsBigEndianKey: false,
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-    ]
+    ] as [String : Any]
 
     private func getDirectoryToSaveAudioFile() -> URL {
         return URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)

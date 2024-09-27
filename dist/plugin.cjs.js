@@ -3,7 +3,6 @@
 var core = require('@capacitor/core');
 var getBlobDuration = require('get-blob-duration');
 
-var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 const RecordingStatus = {
     RECORDING: 'RECORDING',
     PAUSED: 'PAUSED',
@@ -86,7 +85,7 @@ class VoiceRecordingService {
     }
     async setupSilenceDetector(onSilenceCallback, silenceThreshold) {
         this.audioContext = new AudioContext();
-        await this.audioContext.audioWorklet.addModule(new URL('./audio-worklets/silence-detector-processor.js', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('plugin.cjs.js', document.baseURI).href))));
+        await this.audioContext.audioWorklet.addModule('/audio-worklets/silence-detector-processor.js');
         if (!this.stream) {
             throw new Error("Stream is not initialized");
         }

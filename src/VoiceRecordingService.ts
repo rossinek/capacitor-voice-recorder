@@ -87,7 +87,7 @@ export class VoiceRecordingService {
 
   private async setupSilenceDetector(onSilenceCallback: () => void, silenceThreshold: number): Promise<void> {
     this.audioContext = new AudioContext();
-    await this.audioContext.audioWorklet.addModule(new URL('./audio-worklets/silence-detector-processor.js', import.meta.url));
+    await this.audioContext.audioWorklet.addModule('/audio-worklets/silence-detector-processor.js');
 
     if (!this.stream) {
       throw new Error("Stream is not initialized");
