@@ -31,29 +31,23 @@ class CustomMediaRecorder {
     private var lastNonSilenceTime: TimeInterval = 0
     private var audioDetected = false
 
-    public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThresholdSeconds: Float) -> Bool {
-        self.onSilenceCallback = onSilenceCallback
-        self.silenceThresholdSeconds = silenceThresholdSeconds
+    init() {
+        setupAudioSession()
+        setupAudioEngine()
+    }
 
+    private func setupAudioSession() {
         do {
             recordingSession = AVAudioSession.sharedInstance()
             originalRecordingSessionCategory = recordingSession.category
             try recordingSession.setCategory(AVAudioSession.Category.playAndRecord)
             try recordingSession.setActive(true)
-            audioFilePath = getDirectoryToSaveAudioFile().appendingPathComponent("\(UUID().uuidString).wav")
-            audioRecorder = try AVAudioRecorder(url: audioFilePath, settings: settings)
-            audioRecorder.record()
-
-            setupSilenceDetection()
-
-            status = CurrentRecordingStatus.RECORDING
-            return true
         } catch {
-            return false
+            print("Error setting up audio session: \(error)")
         }
     }
 
-    private func setupSilenceDetection() {
+    private func setupAudioEngine() {
         audioEngine = AVAudioEngine()
         let inputNode = audioEngine.inputNode
         let bus = 0
@@ -87,11 +81,24 @@ class CustomMediaRecorder {
                 }
             }
         }
+    }
+
+    public func startRecording(onSilenceCallback: @escaping () -> Void, silenceThresholdSeconds: Float) -> Bool {
+        self.onSilenceCallback = onSilenceCallback
+        self.silenceThresholdSeconds = silenceThresholdSeconds
 
         do {
+            audioFilePath = getDirectoryToSaveAudioFile().appendingPathComponent("\(UUID().uuidString).wav")
+            audioRecorder = try AVAudioRecorder(url: audioFilePath, settings: settings)
+            audioRecorder.record()
+
             try audioEngine.start()
+
+            status = CurrentRecordingStatus.RECORDING
+            return true
         } catch {
-            print("Error starting audio engine: \(error)")
+            print("Error starting recording: \(error)")
+            return false
         }
     }
 
