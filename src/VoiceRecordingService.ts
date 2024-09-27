@@ -49,6 +49,7 @@ export class VoiceRecordingService {
           const mimeType = "audio/wav; codecs=opus";
           const recordingDuration = await getBlobDuration(audioBlob);
           resolve({ value: { recordDataBase64, mimeType, msDuration: recordingDuration * 1000 } });
+          this.reset();
         }, 500);
       };
       this.stopMediaRecorder();

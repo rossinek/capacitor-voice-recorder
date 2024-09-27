@@ -6,7 +6,7 @@ export declare class VoiceRecorderWeb extends WebPlugin implements VoiceRecorder
     hasAudioRecordingPermission(): Promise<GenericResponse>;
     requestAudioRecordingPermission(): Promise<GenericResponse>;
     startRecording(options: {
-        onSilenceCallback: () => void;
+        onSilenceCallback?: () => void;
         silenceThreshold?: number;
     }): Promise<GenericResponse>;
     stopRecording(): Promise<RecordingData>;

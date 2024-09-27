@@ -6,7 +6,7 @@ export declare class VoiceRecordingService {
     private silenceDetectorNode;
     private audioContext;
     startRecording(options: {
-        onSilenceCallback: () => void;
+        onSilenceCallback?: () => void;
         silenceThreshold?: number;
     }): Promise<GenericResponse>;
     stopRecording(): Promise<RecordingData>;

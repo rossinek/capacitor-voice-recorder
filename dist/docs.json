@@ -43,12 +43,12 @@
       },
       {
         "name": "startRecording",
-        "signature": "(options: { onSilenceCallback: () => void; silenceThreshold?: number; }) => Promise<GenericResponse>",
+        "signature": "(options: { onSilenceCallback?: () => void; silenceThreshold?: number; }) => Promise<GenericResponse>",
         "parameters": [
           {
             "name": "options",
             "docs": "",
-            "type": "{ onSilenceCallback: () => void; silenceThreshold?: number | undefined; }"
+            "type": "{ onSilenceCallback?: (() => void) | undefined; silenceThreshold?: number | undefined; }"
           }
         ],
         "returns": "Promise<GenericResponse>",

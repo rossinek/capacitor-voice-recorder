@@ -3,6 +3,7 @@
 var core = require('@capacitor/core');
 var getBlobDuration = require('get-blob-duration');
 
+var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
 const RecordingStatus = {
     RECORDING: 'RECORDING',
     PAUSED: 'PAUSED',
@@ -22,11 +23,11 @@ class VoiceRecordingService {
         this.reset();
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve) => {
-            var _a;
+            var _a, _b;
             this.audioChunks = [];
             this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(this.stream);
-            await this.setupSilenceDetector(options.onSilenceCallback, (_a = options.silenceThreshold) !== null && _a !== void 0 ? _a : 2.0);
+            await this.setupSilenceDetector((_a = options.onSilenceCallback) !== null && _a !== void 0 ? _a : (() => console.log('onSilenceCallback not set')), (_b = options.silenceThreshold) !== null && _b !== void 0 ? _b : 2.0);
             this.mediaRecorder.ondataavailable = (event) => {
                 this.audioChunks.push(event.data);
             };
@@ -50,6 +51,7 @@ class VoiceRecordingService {
                     const mimeType = "audio/wav; codecs=opus";
                     const recordingDuration = await getBlobDuration(audioBlob);
                     resolve({ value: { recordDataBase64, mimeType, msDuration: recordingDuration * 1000 } });
+                    this.reset();
                 }, 500);
             };
             this.stopMediaRecorder();
@@ -84,7 +86,7 @@ class VoiceRecordingService {
     }
     async setupSilenceDetector(onSilenceCallback, silenceThreshold) {
         this.audioContext = new AudioContext();
-        await this.audioContext.audioWorklet.addModule("/audio-worklets/silence-detector-processor.js");
+        await this.audioContext.audioWorklet.addModule(new URL('./audio-worklets/silence-detector-processor.js', (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('plugin.cjs.js', document.baseURI).href))));
         if (!this.stream) {
             throw new Error("Stream is not initialized");
         }
